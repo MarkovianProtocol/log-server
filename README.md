@@ -13,6 +13,7 @@ it needs three files and a place to run them.
 | `verify_tlog_proof.py` | Offline verifier: proof bundle + leaf + policy in, PASS/FAIL out. No network |
 | `make_tiles.py` | Renders the tree as static c2sp.org/tlog-tiles (stdlib only) |
 | `scitt_receipt.py` | Projects a leaf into an RFC 9942 COSE receipt |
+| `check_stream_v2.py` | Completeness checker: verify a stream's records are dense (nothing withheld), chained, and honestly repaired — the independent version of [/ask.html](https://markovianprotocol.com/ask.html) |
 | `tlog.policy.example` | Our live trust policy: a 4-of-7 quorum over named, unrelated operators |
 
 ## Quickstart
