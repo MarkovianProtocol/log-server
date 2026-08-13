@@ -6,7 +6,8 @@ It stores leaves in SQLite, computes the RFC 6962 tree, serves signed checkpoint
 (c2sp.org/tlog-checkpoint) with witness cosignatures, static tiles
 (c2sp.org/tlog-tiles), inclusion/consistency proofs, offline proof bundles
 (c2sp.org/tlog-proof), a machine-readable trust policy (c2sp.org/tlog-policy),
-RFC 9942 SCITT COSE receipts, and a rate-limited public hash-only submission door.
+RFC 9942 SCITT COSE receipts, a live status badge, and a rate-limited public
+hash-only submission door.
 
 All crypto is proofbundle (github.com/MarkovianProtocol/proofbundle, spec-verified
 against C2SP); this file is storage + endpoints. Appends beyond /submit require the
@@ -365,6 +366,33 @@ def make_handler(conn, signer, admin_token, origin=ORIGIN):
                             + "".join(base64.b64encode(p).decode() + "\n" for p in proof)
                             + "\n" + wnote)
                     return self._send(200, body.encode(), cache="short")
+                if path == "/badge.svg":
+                    # Live badge for the log itself: witnessed head size + how many
+                    # witness cosignatures ride on it. Self-served but checkable —
+                    # the badge is a claim about /checkpoint, which anyone verifies.
+                    wnote = witnessed_checkpoint(conn)
+                    if wnote is None:
+                        label, value, color = "witnessed head", "none yet", "#86868b"
+                    else:
+                        size = int(wnote.split("\n")[1])
+                        # distinct witness NAMES: some witnesses add a second
+                        # (post-quantum) signature line — count operators, not lines
+                        wits = len({l.split(" ")[1] for l in wnote.splitlines()
+                                    if l.startswith("— ") and origin not in l})
+                        label = "witnessed head"
+                        value = "size %d · %d witnesses" % (size, wits)
+                        color = "#1d8a4e" if wits >= 4 else "#b26a00"
+                    lw, vw = 6.5 * len(label) + 20, 6.5 * len(value) + 20
+                    svg = ('<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="20" '
+                           'role="img" aria-label="%s: %s">'
+                           '<rect width="%d" height="20" rx="3" fill="#555"/>'
+                           '<rect x="%d" width="%d" height="20" rx="3" fill="%s"/>'
+                           '<g fill="#fff" font-family="Verdana,Geneva,sans-serif" font-size="11">'
+                           '<text x="%d" y="14" text-anchor="middle">%s</text>'
+                           '<text x="%d" y="14" text-anchor="middle">%s</text></g></svg>'
+                           % (lw + vw, label, value, lw + vw, lw, vw, color,
+                              lw / 2, label, lw + vw / 2, value))
+                    return self._send(200, svg.encode(), "image/svg+xml", cache="short")
                 if path == "/policy":
                     # c2sp.org/tlog-policy: the log's witness trust policy, so an
                     # offline verifier knows which cosignature sets are sufficient.

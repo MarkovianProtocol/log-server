@@ -276,6 +276,41 @@ def make_handler(conn, signer, logs):
             if path == "/checkpoints":
                 return self._send(200, checkpoints_text(conn, logs).encode())
             parts = path.strip("/").split("/")
+            if len(parts) == 2 and parts[0] == "badge" and parts[1].endswith(".svg"):
+                # Live witnessed-by badge for a log: /badge/<sha256(origin) hex>.svg
+                # Green = we hold a cosigned checkpoint for that origin (with its size);
+                # grey = origin known but nothing cosigned yet; 404 = unknown origin.
+                h = parts[1][:-4].lower()
+                origin = hash_to_origin.get(h)
+                if origin is None:
+                    return self._send(404, b"unknown origin\n")
+                with _lock:
+                    row = conn.execute("SELECT cosigned_note, size FROM cosigned WHERE origin=?",
+                                       (origin,)).fetchone()
+                ok = bool(row and row[0])
+                label = "witnessed" if ok else "not yet witnessed"
+                value = ("size %d" % row[1]) if ok else "pending"
+                color = "#1d8a4e" if ok else "#86868b"
+                lw, vw = 6.5 * len(label) + 20, 6.5 * len(value) + 20
+                svg = (
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="20" '
+                    'role="img" aria-label="%s: %s">'
+                    '<rect width="%d" height="20" rx="3" fill="#555"/>'
+                    '<rect x="%d" width="%d" height="20" rx="3" fill="%s"/>'
+                    '<g fill="#fff" font-family="Verdana,Geneva,sans-serif" font-size="11">'
+                    '<text x="%d" y="14" text-anchor="middle">%s</text>'
+                    '<text x="%d" y="14" text-anchor="middle">%s</text></g></svg>'
+                    % (lw + vw, label, value, lw + vw, lw, vw, color,
+                       lw / 2, label, lw + vw / 2, value))
+                self.send_response(200)
+                self.send_header("Content-Type", "image/svg+xml")
+                self.send_header("Cache-Control", "max-age=300")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                body = svg.encode()
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if len(parts) == 2 and parts[1] == "checkpoint" and len(parts[0]) == 64:
                 origin = hash_to_origin.get(parts[0].lower())
                 if origin:

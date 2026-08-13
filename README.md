@@ -1,5 +1,7 @@
 # log-server
 
+[![witnessed head](https://log.markovianprotocol.com/badge.svg)](https://log.markovianprotocol.com/checkpoint)
+
 The complete tooling behind [log.markovianprotocol.com](https://log.markovianprotocol.com/),
 published as it runs in production. A small transparency log doesn't need a platform;
 it needs three files and a place to run them.
