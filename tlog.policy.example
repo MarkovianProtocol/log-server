@@ -1,0 +1,24 @@
+# Trust policy for markovianprotocol.com/log (c2sp.org/tlog-policy)
+#
+# A checkpoint is valid if it is signed by the log and cosigned by at
+# least 4 of the 7 pinned witnesses below -- the same quorum the log's
+# own standing monitor enforces (github.com/MarkovianProtocol/log-monitor).
+# Every key below was collected from the witness operator's own published
+# key page, not from this log.
+#
+# Honest note: little-garden and ring-any-bells are both operated by
+# TrustFabric (Google). The 4-of-7 quorum cannot be met by any single
+# operator's keys alone.
+
+log markovianprotocol.com/log+0302c6c8+ATkpOWo95UuEiW2EhNZAol4f0CS8hMluJfPcTSzrr03v
+
+witness stagemole witness.stagemole.eu+67f7aea0+BEqSG3yu9YrmcM3BHvQYTxwFj3uSWakQepafafpUqklv
+witness little-garden transparency.dev/DEV:witness-little-garden+d8042a87+BCtusOxINQNUTN5Oj8HObRkh2yHf/MwYaGX4CPdiVEPM
+witness ring-any-bells staging.witness.transparency.goog/ring-any-bells+2e1a8dc9+BG5JTpLc3FJtwzgh1Uv+Qelz9qeOH2bfWjS1s0s+y4rL
+witness rgdd rgdd.se/poc-witness+db03732e+BCjJKlo6BU0xfIb8LutqerIFTWIXEA0L5n3tW3QyPFgG
+witness smartit witness1.smartit.nu/witness1+a48c820f+BPSFWg9G6KPiO7QPryYO5Xq4oYJJ+kAvLKLSimDhoxMO
+witness remora remora.n621.de+da77ade7+BOvN63jn/bLvkieywe8R6UYAtVtNbZpXh34x7onlmtw2
+witness navigli witness.navigli.sunlight.geomys.org+a3e00fe2+BNy/co4C1Hn1p+INwJrfUlgz7W55dSZReusH/GhUhJ/G
+
+group independent-witnesses 4 stagemole little-garden ring-any-bells rgdd smartit remora navigli
+quorum independent-witnesses
