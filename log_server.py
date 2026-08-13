@@ -6,24 +6,13 @@ It stores leaves in SQLite, computes the RFC 6962 tree, serves signed checkpoint
 (c2sp.org/tlog-checkpoint) with witness cosignatures, static tiles
 (c2sp.org/tlog-tiles), inclusion/consistency proofs, offline proof bundles
 (c2sp.org/tlog-proof), a machine-readable trust policy (c2sp.org/tlog-policy),
-RFC 9942 SCITT COSE receipts, a live status badge, and a rate-limited public
-hash-only submission door.
+RFC 9942 SCITT COSE receipts, a live status badge (/badge.svg), and a
+rate-limited public hash-only submission door whose receipts link a human
+receipt page per leaf.
 
 All crypto is proofbundle (github.com/MarkovianProtocol/proofbundle, spec-verified
 against C2SP); this file is storage + endpoints. Appends beyond /submit require the
 local admin token; everything else is public read.
-
-Served (c2sp.org/tlog-checkpoint + RFC 6962):
-  GET /checkpoint                 -> latest signed checkpoint note (text/plain)
-  GET /consistency?old=N&new=M    -> base64 consistency-proof lines, one per line (new defaults to size)
-  GET /inclusion?leaf=I&size=M    -> base64 inclusion-proof lines (size defaults to current size)
-  GET /leaf/<i>                   -> raw leaf bytes at index i
-  GET /leaves?start=S&end=E       -> up to 256 leaves [S,E) as {"start","end","leaves":[b64,...]} (immutable, cacheable)
-  GET /health                     -> ok
-  POST /add-leaf   (Bearer admin) -> append one leaf (body = leaf bytes); returns "<new_size>\n"
-  POST /submit     (public)       -> notarize a sha256 hash (body = "sha256:<64 hex>"); appends a
-                                     public-note leaf, returns JSON receipt pointers. Rate-limited.
-                                     Hash-only: no submitter content is ever stored in the log.
 
 Usage: log_server.py --selftest | --serve | --add "<data>" | --checkpoint | --submit <witness-url>
 """
@@ -49,6 +38,42 @@ DB_PATH    = os.path.expanduser(os.environ.get("LOG_DB", "~/markovian/log/log.db
 TOKEN_PATH = os.path.expanduser(os.environ.get("LOG_TOKEN", "~/.secrets/log_admin_token"))
 PORT       = int(os.environ.get("LOG_PORT", "8098"))
 _lock = threading.Lock()
+
+
+def _badge_svg(label, value, color):
+    """Markovian badge: dark slate label segment with the gold atom mark, colored
+    value segment, sheen, rounded corners. Width from 11px system-font metrics."""
+    ICON_W = 21
+    lw = ICON_W + int(6.1 * len(label)) + 10
+    vw = int(6.1 * len(value)) + 18
+    w = lw + vw
+    tx_l = ICON_W + (lw - ICON_W) / 2.0
+    tx_v = lw + vw / 2.0
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="22" role="img" aria-label="{label}: {value}">
+<title>{label}: {value}</title>
+<defs>
+<linearGradient id="s" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".14"/><stop offset=".92" stop-opacity="0"/></linearGradient>
+<clipPath id="r"><rect width="{w}" height="22" rx="5"/></clipPath>
+</defs>
+<g clip-path="url(#r)">
+<rect width="{lw}" height="22" fill="#24292f"/>
+<rect x="{lw}" width="{vw}" height="22" fill="{color}"/>
+<rect width="{w}" height="22" fill="url(#s)"/>
+</g>
+<g transform="translate(5.5,4.6)" stroke="#e6b845" stroke-width="1.05" fill="none">
+<circle cx="6.4" cy="6.4" r="1.25" fill="#e6b845" stroke="none"/>
+<ellipse cx="6.4" cy="6.4" rx="5.7" ry="2.15"/>
+<ellipse cx="6.4" cy="6.4" rx="5.7" ry="2.15" transform="rotate(60 6.4 6.4)"/>
+<ellipse cx="6.4" cy="6.4" rx="5.7" ry="2.15" transform="rotate(120 6.4 6.4)"/>
+</g>
+<g font-family="-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="500" text-anchor="middle" letter-spacing=".2">
+<text x="{tx_l}" y="15.6" fill="#010101" fill-opacity=".25">{label}</text>
+<text x="{tx_l}" y="14.8" fill="#fff">{label}</text>
+<text x="{tx_v}" y="15.6" fill="#010101" fill-opacity=".25">{value}</text>
+<text x="{tx_v}" y="14.8" fill="#fff">{value}</text>
+</g>
+</svg>'''
+
 
 # --- public submit (hash receipts) ---
 # Hash-only by design: nothing a submitter sends is stored except 32 bytes of
@@ -367,32 +392,20 @@ def make_handler(conn, signer, admin_token, origin=ORIGIN):
                             + "\n" + wnote)
                     return self._send(200, body.encode(), cache="short")
                 if path == "/badge.svg":
-                    # Live badge for the log itself: witnessed head size + how many
-                    # witness cosignatures ride on it. Self-served but checkable —
-                    # the badge is a claim about /checkpoint, which anyone verifies.
+                    # Live badge: witnessed head size + distinct witness count.
+                    # Self-served but checkable — it's a claim about /checkpoint.
                     wnote = witnessed_checkpoint(conn)
                     if wnote is None:
                         label, value, color = "witnessed head", "none yet", "#86868b"
                     else:
                         size = int(wnote.split("\n")[1])
-                        # distinct witness NAMES: some witnesses add a second
-                        # (post-quantum) signature line — count operators, not lines
                         wits = len({l.split(" ")[1] for l in wnote.splitlines()
                                     if l.startswith("— ") and origin not in l})
                         label = "witnessed head"
-                        value = "size %d · %d witnesses" % (size, wits)
+                        value = "size %s · %d witnesses" % (format(size, ","), wits)
                         color = "#1d8a4e" if wits >= 4 else "#b26a00"
-                    lw, vw = 6.5 * len(label) + 20, 6.5 * len(value) + 20
-                    svg = ('<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="20" '
-                           'role="img" aria-label="%s: %s">'
-                           '<rect width="%d" height="20" rx="3" fill="#555"/>'
-                           '<rect x="%d" width="%d" height="20" rx="3" fill="%s"/>'
-                           '<g fill="#fff" font-family="Verdana,Geneva,sans-serif" font-size="11">'
-                           '<text x="%d" y="14" text-anchor="middle">%s</text>'
-                           '<text x="%d" y="14" text-anchor="middle">%s</text></g></svg>'
-                           % (lw + vw, label, value, lw + vw, lw, vw, color,
-                              lw / 2, label, lw + vw / 2, value))
-                    return self._send(200, svg.encode(), "image/svg+xml", cache="short")
+                    return self._send(200, _badge_svg(label, value, color).encode(),
+                                      "image/svg+xml", cache="short")
                 if path == "/policy":
                     # c2sp.org/tlog-policy: the log's witness trust policy, so an
                     # offline verifier knows which cosignature sets are sufficient.
@@ -518,6 +531,7 @@ def make_handler(conn, signer, admin_token, origin=ORIGIN):
                 "inclusion_proof": f"{PUBLIC_BASE}/inclusion?leaf={i}&size={size}",
                 "leaf_bytes": f"{PUBLIC_BASE}/leaf/{i}",
                 "witnessed_checkpoint": f"{PUBLIC_BASE}/checkpoint",
+                "receipt_page": f"https://markovianprotocol.com/r/{i}",
                 "scitt_receipt": f"{PUBLIC_BASE}/receipt/scitt/{i}",
                 "note": ("your leaf is in the tree now; it is covered by witness "
                          "cosignatures and the Bitcoin anchor once /checkpoint "
