@@ -16,6 +16,8 @@ it needs three files and a place to run them.
 | `check_stream_v2.py` | Completeness checker: verify a stream's records are dense (nothing withheld), chained, and honestly repaired — the independent version of [/ask.html](https://markovianprotocol.com/ask.html) |
 | `pq_selfsign.py` | ML-DSA-44 (FIPS 204) self-cosignature on the checkpoint, alongside Ed25519 |
 | `verify_pq_line.py` | Checks any ML-DSA-44 cosignature line on a checkpoint against the operator's published verifier key |
+| `submit_witnesses.py` | Sends one pinned checkpoint to every witness, verifies each returned cosignature against `witness_keys.json` before publishing it, drops anything that doesn't check out |
+| `witness_keys.json` | The 7 witness verifier keys we pin, each collected from the operator's own page, never from a log |
 | `tlog.policy.example` | Our live trust policy: a 4-of-7 quorum over named, unrelated operators |
 
 ## Quickstart
@@ -64,8 +66,11 @@ for whoever checks later — and both print valid receipts. Witness cosignatures
 make the books singular. Nothing here proves any entry's *content* is true; the
 log proves what was said and when, never whether it was right.
 
-Getting your own log witnessed: [witness-network.org/participate](https://witness-network.org/participate).
-Our witness will cosign you too.
+Getting your own log witnessed: run your checkpoint through `submit_witnesses.py`
+against `witness_keys.json` and you're sending to all 7. To get on that list
+yourself, enroll at [witness-network.org/participate](https://witness-network.org/participate) —
+our witness follows it and picks up new logs automatically — or open an issue
+here with your origin, key, and checkpoint URL and we'll pin you directly.
 
 Companion repos: [log-monitor](https://github.com/MarkovianProtocol/log-monitor)
 (the standing auditor), [log-terminal-export](https://github.com/MarkovianProtocol/log-terminal-export)

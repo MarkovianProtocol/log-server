@@ -1,0 +1,12 @@
+{
+  "_note": "Pinned Ed25519 witness verifier keys, in c2sp vkey form name+keyid+base64(0x04||pubkey). Each collected from the witness operator's OWN published key page (cited). submit_witnesses.py verifies every returned cosignature against these before publishing it; an unpinned or failing cosignature is NOT published. To add a witness, pin its key here first.",
+  "keys": [
+    {"vkey": "witness.stagemole.eu+67f7aea0+BEqSG3yu9YrmcM3BHvQYTxwFj3uSWakQepafafpUqklv", "src": "https://witness.stagemole.eu/about"},
+    {"vkey": "transparency.dev/DEV:witness-little-garden+d8042a87+BCtusOxINQNUTN5Oj8HObRkh2yHf/MwYaGX4CPdiVEPM", "src": "https://transparency.dev/witnesses/"},
+    {"vkey": "staging.witness.transparency.goog/ring-any-bells+2e1a8dc9+BG5JTpLc3FJtwzgh1Uv+Qelz9qeOH2bfWjS1s0s+y4rL", "src": "https://transparency.dev/witnesses/"},
+    {"vkey": "rgdd.se/poc-witness+db03732e+BCjJKlo6BU0xfIb8LutqerIFTWIXEA0L5n3tW3QyPFgG", "src": "https://www.rgdd.se/poc-witness/about"},
+    {"vkey": "witness1.smartit.nu/witness1+a48c820f+BPSFWg9G6KPiO7QPryYO5Xq4oYJJ+kAvLKLSimDhoxMO", "src": "https://witness1.smartit.nu/witness1/about.txt"},
+    {"vkey": "remora.n621.de+da77ade7+BOvN63jn/bLvkieywe8R6UYAtVtNbZpXh34x7onlmtw2", "src": "https://remora.n621.de/"},
+    {"vkey": "witness.navigli.sunlight.geomys.org+a3e00fe2+BNy/co4C1Hn1p+INwJrfUlgz7W55dSZReusH/GhUhJ/G", "src": "https://navigli.sunlight.geomys.org/"}
+  ]
+}
