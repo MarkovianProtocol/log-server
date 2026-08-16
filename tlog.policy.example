@@ -9,6 +9,11 @@
 # Honest note: little-garden and ring-any-bells are both operated by
 # TrustFabric (Google). The 4-of-7 quorum cannot be met by any single
 # operator's keys alone.
+#
+# A signature under this log's own origin name (markovianprotocol.com/log)
+# never counts toward the witness quorum, whatever its algorithm. The log
+# signs its own checkpoints with Ed25519 and ML-DSA-44; those lines
+# authenticate the checkpoint, they are not witness cosignatures.
 
 log markovianprotocol.com/log+0302c6c8+ATkpOWo95UuEiW2EhNZAol4f0CS8hMluJfPcTSzrr03v
 

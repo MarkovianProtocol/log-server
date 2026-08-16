@@ -14,6 +14,8 @@ it needs three files and a place to run them.
 | `make_tiles.py` | Renders the tree as static c2sp.org/tlog-tiles (stdlib only) |
 | `scitt_receipt.py` | Projects a leaf into an RFC 9942 COSE receipt |
 | `check_stream_v2.py` | Completeness checker: verify a stream's records are dense (nothing withheld), chained, and honestly repaired — the independent version of [/ask.html](https://markovianprotocol.com/ask.html) |
+| `pq_selfsign.py` | ML-DSA-44 (FIPS 204) self-cosignature on the checkpoint, alongside Ed25519 |
+| `verify_pq_line.py` | Checks any ML-DSA-44 cosignature line on a checkpoint against the operator's published verifier key |
 | `tlog.policy.example` | Our live trust policy: a 4-of-7 quorum over named, unrelated operators |
 
 ## Quickstart
@@ -40,6 +42,19 @@ python3 verify_tlog_proof.py leaf7271.tlog-proof leaf.bin live.policy
 Checks the log signature, every witness cosignature against the policy's pinned
 keys, the quorum, and the inclusion path to the signed root — with no network
 and no trust in the operator.
+
+Two of our witnesses also attach ML-DSA-44 cosignatures. Their verifier keys come
+from the operators, not from us — TrustFabric publishes ring-any-bells' at
+[transparency.dev/witnesses](https://transparency.dev/witnesses), Geomys publishes
+navigli's on the [witness's own homepage](https://witness.navigli.sunlight.geomys.org):
+
+```
+curl -o cp.txt https://log.markovianprotocol.com/checkpoint
+python3 verify_pq_line.py cp.txt "<vkey from the operator's page>"
+```
+
+The key id is recomputed from the key material before anything is verified, so a
+key that doesn't belong to the line fails there rather than silently passing.
 
 ## Scope, honestly
 
