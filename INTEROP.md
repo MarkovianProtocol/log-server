@@ -41,11 +41,30 @@ format because it's the one Python peer implementing this shape. Tamper
 control: flipping one byte of the receipt makes `verify_receipt` return
 `ok=False`.
 
-Caveat carried over from `scitt_receipt.py`'s own docstring: the receipt
-above is signed by a throwaway key generated per run, not the log's real
-Ed25519 key. Wiring in the real key is a one-line swap (the checkpoint
-signature and the receipt signature would share the same signing domain);
-nothing about the wire format changes.
+The receipt above is signed by a throwaway key generated per run, not the
+log's real Ed25519 key -- useful for checking the wire format, not for
+handing someone a receipt they should trust. `--real-key` closes that: it
+loads the same seed `log_server.py` signs checkpoints with (env `LOG_SEED`,
+default `~/.secrets/log_ed25519.seed`) and signs the receipt with it instead.
+Run the same way, on leaf 7271:
+
+```
+$ python3 scitt_receipt.py 7271 --real-key --out realkey.cose
+...
+signing key    : REAL log key
+pubkey written : realkey.pubkey.pem
+```
+
+The derived public key, `3929396a...baf4def`, matches byte-for-byte the key
+in the log's own published policy (`markovianprotocol.com/log+0302c6c8+...`)
+-- decode the vkey's base64, drop the leading algorithm byte, and the
+remaining 32 bytes are identical to what this tool wrote to
+`realkey.pubkey.pem`. That receipt then verifies under `scitt-cose` the same
+way: `ok=True`, same root, same tree_size, same leaf_index, tamper control
+fails. Not a decoy key producing a self-consistent receipt -- the log's
+actual, publicly pinned signing key, checked against an independent
+implementation, with the private seed never leaving the process that loaded
+it.
 
 ## Why this is here
 

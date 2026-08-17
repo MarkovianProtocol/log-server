@@ -18,23 +18,27 @@ Structure emitted (CBOR tag 18 = COSE_Sign1):
 
 RFC citations are in INTEROP.md.
 
-KEY WARNING -------------------------------------------------------------------
-This tool signs the receipt with a THROWAWAY Ed25519 key it generates on each
-run (written next to the receipt as receipt.pubkey.pem). It is NOT the real log
-key. A throwaway key makes the receipt self-consistent and round-trippable, but
-it is not attributable to the log.
+KEYS -----------------------------------------------------------------------
+Default: a THROWAWAY Ed25519 key generated fresh each run (written next to the
+receipt as receipt.pubkey.pem). Self-consistent and round-trippable, but not
+attributable to the log -- use this to check the wire format, not to hand
+someone a receipt they should trust.
 
-In PRODUCTION the log would sign this COSE_Sign1 with the SAME Ed25519 key it
-already uses to sign checkpoints (published at / and advertised via the log's
-vkey), loaded as a COSE OKP key (kty=OKP, crv=Ed25519). No new key, no new trust
-root — the receipt just re-expresses the checkpoint's existing signature domain
-in COSE. Wiring that in is a one-line key swap; everything else here is unchanged.
--------------------------------------------------------------------------------
+--real-key: signs with the SAME Ed25519 key the log already uses to sign
+checkpoints, loaded from the same seed path log_server.py reads (env LOG_SEED,
+default ~/.secrets/log_ed25519.seed; base64, 32 bytes -- see log_server.py's
+load_signer()). No new key, no new trust root: the receipt re-expresses the
+checkpoint's existing signature domain in COSE. The private seed is never
+printed or written anywhere by this tool, only loaded into memory to sign;
+only the derived public key is ever written to disk.
+------------------------------------------------------------------------------
 """
 from __future__ import annotations
 
 import argparse
 import base64
+import os
+import pathlib
 import sys
 import urllib.request
 
@@ -45,6 +49,7 @@ import cbor_min
 import rfc6962
 
 DEFAULT_LOG = "https://log.markovianprotocol.com"
+DEFAULT_SEED_PATH = os.path.expanduser(os.environ.get("LOG_SEED", "~/.secrets/log_ed25519.seed"))
 
 # COSE / SCITT labels and code points (RFC 9052, RFC 9053, RFC 9942).
 HDR_ALG = 1            # RFC 9052 3.1
@@ -54,6 +59,15 @@ VDS_RFC9162_SHA256 = 1  # RFC 9942 registry: CT/RFC-6962-style SHA-256 Merkle tr
 VDP_INCLUSION = -1     # RFC 9942: inclusion-proofs array within the vdp map
 ALG_EDDSA = -8         # RFC 9053
 COSE_SIGN1_TAG = 18    # RFC 9052 2
+
+
+def load_real_log_key(seed_path: str = DEFAULT_SEED_PATH) -> Ed25519PrivateKey:
+    """Load the log's real Ed25519 signing key -- same seed, same decoding as
+    log_server.py's load_signer(). The seed never leaves this process."""
+    seed = base64.b64decode(pathlib.Path(seed_path).read_text().strip())
+    if len(seed) != 32:
+        raise SystemExit(f"log seed must decode to 32 bytes, got {len(seed)}")
+    return Ed25519PrivateKey.from_private_bytes(seed)
 
 
 def _get(url: str, timeout: int = 20) -> bytes:
@@ -121,6 +135,11 @@ def main() -> int:
     ap.add_argument("--out", default="receipt.cose", help="output receipt path")
     ap.add_argument("--attached", action="store_true",
                     help="embed the root as the payload instead of detaching it")
+    ap.add_argument("--real-key", action="store_true",
+                    help="sign with the log's real Ed25519 key (env LOG_SEED or "
+                         "~/.secrets/log_ed25519.seed) instead of a throwaway one")
+    ap.add_argument("--seed-path", default=DEFAULT_SEED_PATH,
+                    help="path to the real log seed, if --real-key is set")
     args = ap.parse_args()
 
     tree_size, cp_root, cp_text = fetch_checkpoint(args.log)
@@ -128,7 +147,12 @@ def main() -> int:
     leaf = fetch_leaf(args.log, args.index)
     path = fetch_inclusion(args.log, args.index, size)
 
-    key = Ed25519PrivateKey.generate()  # THROWAWAY -- see module docstring
+    if args.real_key:
+        key = load_real_log_key(args.seed_path)
+        key_label = "REAL log key"
+    else:
+        key = Ed25519PrivateKey.generate()
+        key_label = "THROWAWAY (NOT the log key)"
     receipt, root = build_receipt(leaf, args.index, size, path, key, detached=not args.attached)
 
     with open(args.out, "wb") as f:
@@ -151,7 +175,8 @@ def main() -> int:
     if size == tree_size:
         print(f"checkpoint root: {cp_root.hex()}  MATCH={root == cp_root}")
     print(f"receipt bytes  : {len(receipt)} -> {args.out}")
-    print(f"THROWAWAY pub  : {args.out.replace('.cose','')}.pubkey.pem  (NOT the log key)")
+    print(f"signing key    : {key_label}")
+    print(f"pubkey written : {args.out.replace('.cose','')}.pubkey.pem")
     return 0
 
 
