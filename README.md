@@ -10,6 +10,7 @@ it needs three files and a place to run them.
 |---|---|
 | `log_server.py` | The log: SQLite + RFC 6962 tree, serving `checkpoint` / `tile` (tlog-tiles) / `inclusion` / `consistency` / `proof` (tlog-proof) / `policy` (tlog-policy) / `receipt/scitt` (RFC 9942) / public `POST /submit` (hash-only, rate-limited) |
 | `witness_server.py` | The witness: cosigns *other* operators' logs per c2sp.org/tlog-witness. Pins each log's key, refuses forks and rollbacks, never signs two histories |
+| `witness_poller.py` | For logs that don't push their checkpoint to us: polls `poll_logs.json` on a schedule, fetches via `tlog-tiles`, `sigsum`, or flat `checkpoint` (a log that serves raw newline-delimited leaves at one URL, no tiling — same shape as `log_server.py` itself), verifies, submits to our own witness over the same public protocol anyone else uses |
 | `verify_tlog_proof.py` | Offline verifier: proof bundle + leaf + policy in, PASS/FAIL out. No network |
 | `make_tiles.py` | Renders the tree as static c2sp.org/tlog-tiles (stdlib only) |
 | `scitt_receipt.py` | Projects a leaf into an RFC 9942 COSE receipt (needs `cbor_min.py`, `rfc6962.py` below; cross-checked against `action-state-group/scitt-cose`, see INTEROP.md) |
