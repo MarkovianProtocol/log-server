@@ -12,7 +12,9 @@ it needs three files and a place to run them.
 | `witness_server.py` | The witness: cosigns *other* operators' logs per c2sp.org/tlog-witness. Pins each log's key, refuses forks and rollbacks, never signs two histories |
 | `verify_tlog_proof.py` | Offline verifier: proof bundle + leaf + policy in, PASS/FAIL out. No network |
 | `make_tiles.py` | Renders the tree as static c2sp.org/tlog-tiles (stdlib only) |
-| `scitt_receipt.py` | Projects a leaf into an RFC 9942 COSE receipt |
+| `scitt_receipt.py` | Projects a leaf into an RFC 9942 COSE receipt (needs `cbor_min.py`, `rfc6962.py` below; cross-checked against `action-state-group/scitt-cose`, see INTEROP.md) |
+| `cbor_min.py` | Minimal deterministic CBOR encoder `scitt_receipt.py` needs |
+| `rfc6962.py` | RFC 6962 root-from-inclusion-proof reconstruction `scitt_receipt.py` needs |
 | `check_stream_v2.py` | Completeness checker: verify a stream's records are dense (nothing withheld), chained, and honestly repaired — the independent version of [/ask.html](https://markovianprotocol.com/ask.html) |
 | `pq_selfsign.py` | ML-DSA-44 (FIPS 204) self-cosignature on the checkpoint, alongside Ed25519 |
 | `verify_pq_line.py` | Checks any ML-DSA-44 cosignature line on a checkpoint against the operator's published verifier key |
