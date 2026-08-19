@@ -128,13 +128,19 @@ def verify_cosig_lines(lines, body, pinned):
     return accepted, "; ".join(notes)
 
 
+
+# Cloudflare's managed bot rule answers 403 "error code: 1010" to urllib's
+# default User-Agent, before the request reaches the witness. Identify the log.
+UA_SUBMIT = "markovian-log/1.0 (+https://markovianprotocol.com/log; c2sp tlog-witness submit)"
+
+
 def submit_pinned(url, leaves, size, checkpoint, timeout=20):
     """Submit the EXACT pinned checkpoint. Returns (status, body)."""
     def _post(old):
         proof = merkle.consistency_proof(leaves, old) if 0 < old < size else []
         header = f"old {old}\n" + "".join(base64.b64encode(p).decode() + "\n" for p in proof) + "\n"
         req = urllib.request.Request(url, data=(header + checkpoint).encode(),
-                                     method="POST", headers={"Content-Type": "text/plain"})
+                                     method="POST", headers={"Content-Type": "text/plain", "User-Agent": UA_SUBMIT})
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.status, r.read().decode()

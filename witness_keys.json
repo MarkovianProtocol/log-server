@@ -7,6 +7,7 @@
     {"vkey": "rgdd.se/poc-witness+db03732e+BCjJKlo6BU0xfIb8LutqerIFTWIXEA0L5n3tW3QyPFgG", "src": "https://www.rgdd.se/poc-witness/about"},
     {"vkey": "witness1.smartit.nu/witness1+a48c820f+BPSFWg9G6KPiO7QPryYO5Xq4oYJJ+kAvLKLSimDhoxMO", "src": "https://witness1.smartit.nu/witness1/about.txt"},
     {"vkey": "remora.n621.de+da77ade7+BOvN63jn/bLvkieywe8R6UYAtVtNbZpXh34x7onlmtw2", "src": "https://remora.n621.de/"},
-    {"vkey": "witness.navigli.sunlight.geomys.org+a3e00fe2+BNy/co4C1Hn1p+INwJrfUlgz7W55dSZReusH/GhUhJ/G", "src": "https://navigli.sunlight.geomys.org/"}
+    {"vkey": "witness.navigli.sunlight.geomys.org+a3e00fe2+BNy/co4C1Hn1p+INwJrfUlgz7W55dSZReusH/GhUhJ/G", "src": "https://navigli.sunlight.geomys.org/"},
+    {"vkey": "gblin.digital/witness+c335a002+BF54nC8Q1wHAlKirQexRC5phxjLtbEhcq8udv8TXPwXx", "src": "https://gblin-mcp.gblin-mcp-worker.workers.dev/witness"}
   ]
 }

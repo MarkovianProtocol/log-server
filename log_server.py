@@ -254,6 +254,12 @@ def witnessed_checkpoint(conn):
 
 
 # ----------------------------- tlog-witness submit client -----------------------------
+
+# Cloudflare's managed bot rule answers 403 "error code: 1010" to urllib's
+# default User-Agent, before the request reaches the witness. Identify the log.
+UA_SUBMIT = "markovian-log/1.0 (+https://markovianprotocol.com/log; c2sp tlog-witness submit)"
+
+
 def submit_to_witness(witness_url, conn, signer, origin=ORIGIN, timeout=15):
     """Submit our current checkpoint to a C2SP tlog-witness, resolving `old` via the 409 dance.
 
@@ -267,7 +273,7 @@ def submit_to_witness(witness_url, conn, signer, origin=ORIGIN, timeout=15):
         header = f"old {old}\n" + "".join(base64.b64encode(p).decode() + "\n" for p in proof) + "\n"
         body = (header + checkpoint).encode()
         req = urllib.request.Request(witness_url, data=body, method="POST",
-                                     headers={"Content-Type": "text/plain"})
+                                     headers={"Content-Type": "text/plain", "User-Agent": UA_SUBMIT})
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.status, r.read().decode()
