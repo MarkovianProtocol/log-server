@@ -21,7 +21,7 @@ it needs three files and a place to run them.
 | `verify_pq_line.py` | Checks any ML-DSA-44 cosignature line on a checkpoint against the operator's published verifier key |
 | `submit_witnesses.py` | Sends one pinned checkpoint to every witness, verifies each returned cosignature against `witness_keys.json` before publishing it, drops anything that doesn't check out |
 | `witness_keys.json` | The 7 witness verifier keys we pin, each collected from the operator's own page, never from a log |
-| `tlog.policy.example` | Our live trust policy: a 4-of-7 quorum over named, unrelated operators |
+| `tlog.policy.example` | Our live trust policy: a 4-of-7 quorum over seven named witnesses from six operators |
 
 ## Quickstart
 
